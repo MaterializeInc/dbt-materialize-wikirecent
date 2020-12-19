@@ -1,0 +1,46 @@
+
+version: 2
+
+models:
+  - name: recentchanges
+    description: "All changes since stream began"
+    columns:
+      - name: r_schema
+      - name: bot
+      - name: comment
+      - name: id
+      - name: length_new
+      - name: length_old
+      - name: meta_uri,
+      - name: meta_id
+      - name: minor
+      - name: namespace
+      - name: parsedcomment
+      - name: revision_new
+      - name: revision_old
+      - name: server_name
+      - name: server_script_path
+      - name: server_url
+      - name: r_ts
+      - name: title
+      - name: type
+      - name: user
+      - name: wiki
+  - name: useredits
+    description: "All recent Wikipedia editors"
+    columns:
+      - name: user
+        description: "The user"
+        tests:
+          - not_null
+      - name: changes
+        description: "The number of changes"
+  - name: top10
+    description: "Top 10 Wikipedia editors"
+    columns:
+      - name: user
+        description: "The user"
+        tests:
+          - not_null
+      - name: changes
+        description: "The number of changes"
