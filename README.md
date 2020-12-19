@@ -4,7 +4,9 @@ Welcome! This repo walks you through a basic [dbt](https://www.getdbt.com/) proj
 [Materialize](https://materialize.com/docs/) as its data warehouse and a [Wikipedia change feed](https://stream.wikimedia.org/?doc)
 as its data. 
 
-We intend to improve this project and its documentation over time, so PRs are welcome!
+Note: the `dbt-materialize` adapter used for this project is still a work in progress! Some
+functionality is not yet implemented, and listed in `Known Issues` below. However, we intend to
+improve the adapter, this project, and this documentation, so issues and PRs are welcome!
 
 ### Basic setup
 To get everything you need to run dbt with Materialize locally, work through the following steps:
@@ -88,6 +90,9 @@ Additionally, you will see that we've added a few tests. To run these tests, run
 ```nofmt
 dbt test
 ```
+
+### Known issues:
+- `dbt docs generate` fails
 
 ### Resources:
 - Learn more about Materialize [in the docs](https://materialize.com/docs/)
