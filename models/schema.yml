@@ -3,7 +3,7 @@ version: 2
 
 models:
   - name: recentchanges
-    description: "All changes since stream began"
+    description: "Streaming Wikimedia event data"
     columns:
       - name: r_schema
       - name: bot
@@ -27,20 +27,20 @@ models:
       - name: user
       - name: wiki
   - name: useredits
-    description: "All recent Wikipedia editors"
+    description: "Edit counts per user"
     columns:
       - name: user
         description: "The user"
         tests:
           - not_null
       - name: changes
-        description: "The number of changes"
+        description: "The number of edits made by the user"
   - name: top10
-    description: "Top 10 Wikipedia editors"
+    description: "Top 10 Wikipedia editors since the stream started"
     columns:
       - name: user
         description: "The user"
         tests:
           - not_null
       - name: changes
-        description: "The number of changes"
+        description: "The number of edits made by the user"
