@@ -4,98 +4,144 @@ Welcome! This repo walks you through a basic [dbt](https://www.getdbt.com/) proj
 [Materialize](https://materialize.com/docs/) as its data warehouse and a [Wikipedia change feed](https://stream.wikimedia.org/?doc)
 as its data. 
 
-Note: the `dbt-materialize` adapter used for this project is still a work in progress! Some
-functionality is not yet implemented, and listed in `Known Issues` below. However, we intend to
-improve the adapter, this project, and this documentation, so issues and PRs are welcome!
+*Note*: the [`dbt-materialize`](https://github.com/MaterializeInc/dbt-materialize) adapter used for this
+project is still a work in progress! If you hit a snag along the way, please open an issue or submit a PR.
 
 ### Basic setup
-To get everything you need to run dbt with Materialize locally, work through the following steps:
+To get everything you need to run dbt with Materialize locally, do the following:
 1. Git clone this repo.
 
 1. Git clone the [`dbt-materialize` adapter repo](https://github.com/MaterializeInc/dbt-materialize).
 
-1. Create a new local Python virtual environment. Once you've activated that virtualenv,
-   run:
-    - `pip install dbt`
-    - `pip install [../relative/path/to/dbt-materialize]`
+1. Create a new Python virtual environment on your machine. Activate that environment,
+   and install the following:
+    ```nofmt
+    pip install dbt
+    pip install [../relative/path/to/dbt-materialize]
+    ```
+
+1. Replace or add the following profile to your `~/.dbt/profiles.yml` file:
+    ```nofmt
+    default:
+      outputs:
     
-1. Run Materialize on port `6875`, [installation instructions here](https://materialize.com/quickstart/).
+        dev:
+          type: materialize
+          threads: 1
+          host: localhost
+          port: 6875
+          user: user
+          pass: pass
+          dbname: materialize
+          schema: public
+    
+      target: dev
+    ```
 
-1. Replace or add the following to your `~/.dbt/profiles.yml` file:
-```nofmt
-default:
-  outputs:
+1. Spin up a local Materialize instance on port `6875`, [instructions here](https://materialize.com/quickstart/).
 
-    dev:
-      type: materialize
-      threads: 1
-      host: localhost
-      port: 6875
-      user: user
-      pass: pass
-      dbname: materialize
-      schema: public
+Once you've completed these steps, you're ready to run dbt with Materialize!
 
-  target: dev
-```
+### Creating models from Wikipedia data
 
-At this point, you should be set up to run dbt with Materialize. Next, we'll introduce the
-Wikipedia data in order to create meaningful and interesting views.
+In this project, we're going to use [dbt models](https://docs.getdbt.com/docs/building-a-dbt-project/building-models/)
+to create materialized views of a Wikipedia change feed. 
 
-### Creating models
+*Note*: A version of this demo where each view is manually created can be [found here](https://materialize.com/quickstart/)
+in the "Create a real-time stream" section.
 
-In this project, we're going to create [dbt models](https://docs.getdbt.com/docs/building-a-dbt-project/building-models/)
-on top of a Wikipedia change feed. (A different version of this Materialize demo over the same data can be
-[found here](https://materialize.com/quickstart/) in the "Create a real-time stream" section).
+To create our dbt models, follow these steps:
 
-First, let's set up a stream of Wikipedia's recent changes, and write all of these changes to a
-file. From your shell, run this command:
-```nofmt
-while true; do
-  curl --max-time 9999999 -N https://stream.wikimedia.org/v2/stream/recentchange >> wikirecent
-done
-```
-Note the absolute path of the location where you write `wikirecent`, which we’ll need in the next step.
+1. Open a shell and run the following command to stream Wikipedia edit events into local file:
+   ```nofmt
+   while true; do
+     curl --max-time 9999999 -N https://stream.wikimedia.org/v2/stream/recentchange >> wikirecent
+   done
+   ```
+   Note the absolute path of the location of `wikirecent`, which we’ll need in the next step.
 
-Once you have this stream, create a Materialize source via `psql`:
-```
-CREATE SOURCE wikirecent
-FROM FILE '[path to wikirecent]' WITH (tail = true)
-FORMAT REGEX '^data: (?P<data>.*)';
-```
+1. [Connect to your running Materialize instance](https://materialize.com/docs/connect/cli/)
+   from your shell. Once you've connected, [create a source](https://materialize.com/docs/sql/create-source/text-file/#main)
+   using your `wikirecent` file from the last step:
+   ```nofmt
+   CREATE SOURCE wikirecent
+   FROM FILE '[path to wikirecent]' WITH (tail = true)
+   FORMAT REGEX '^data: (?P<data>.*)';
+   ```   
+   
+1. Verify that your source was created by running the following in your shell:
+    ```nofmt
+   > SHOW SOURCES;
+       name
+   ------------
+    wikirecent
+   
+   > SHOW COLUMNS FROM wikirecent; 
+       name    | nullable | type
+   ------------+----------+------
+    data       | t        | text
+    mz_line_no | f        | int8
+   ```
 
-You can verify that your source was correctly created in Materialize with `SHOW SOURCES` or
-`SHOW COLUMNS FROM wikirecent`.
+1. Create your materialized views using dbt. In your shell, navigate to where you cloned this project
+   on your local machine. Once there, run the following [dbt commands](https://docs.getdbt.com/reference/dbt-commands/)
+   from your Python virtual environment:
+   ```nofmt
+   dbt compile
+   dbt run
+   ```
+   
+   `dbt compile` generates executable SQL from our model files, which can be found in the `models` directory
+   of this project. `dbt run` executes the compiled SQL files against the target database, creating
+   our materialized views.
+   
+   Note: If you haven't set up your Python environment with `dbt` and the `dbt-materialize` adapter,
+   please revisit the [basic setup](#basic-setup) above.
+   
+1. Verify that `dbt run` created your materialized views by running the following:
+   ```nofmt
+   > SHOW VIEWS;
+        name
+   ---------------
+    recentchanges
+    top10
+    useredits
+   ```
+   
+Congratulations! You've just used dbt to create materialized views in Materialize. Now that everything is
+set up, you can interactively query each of the views you just created. For example:
+   ```nofmt
+   > SELECT * FROM top10;
+        user      | changes
+   ---------------+---------
+    Fæ            |   10834
+    Sic19         |    7970
+    Lockal        |   10450
+    Akbarali      |    9631
+    SuccuBot      |    8862
+    Merge bot     |    4019
+    Edoderoobot   |    3953
+    Sarri.greek   |    3900
+    BotMultichill |    4391
+    SchlurcherBot |    8005
+   (10 rows)
+   ```
 
-Now, instead of following the rest of the traditional `wikirecent` demo steps, we are going to
-create the materialized views using dbt models instead. This repo provides you with the three
-models you need, each with their own file in the `models` directory: `recentchanges`, `useredits`,
-and `top10`. 
+At this point, you might be wondering -- what do each of these views mean? To learn a bit more, let's generate
+and view their documentation using dbt. From your Python virtual environment, run:
+   ```nofmt
+   dbt docs generate
+   dbt docs serve
+   ```
+   
+`dbt docs generate` generates this project's documentation website. `dbt docs serve` makes those 
+docs available at http://localhost:8080. 
 
-Navigate to this directory in your shell. Then, run the following [dbt commands](https://docs.getdbt.com/reference/dbt-commands/):
-```nofmt
-dbt compile
-dbt build
-```
-
-You'll notice that `dbt build` creates your materialized views for you! Returning to `psql`, you
-should be able to query each of the views that you just created. For example, the following query will
-return the top 10 Wikipedia editors since you started your stream:
-```sql
-SELECT * FROM top10;
-```
-
-If you open `models/schema.yml`, you will be able to see the definitions of each of the models.
-Additionally, you will see that we've added a few tests. To run these tests, run:
-```nofmt
-dbt test
-```
-
-### Known issues:
-- `dbt docs generate` fails
+Once the local docs site is available, click into `materialize_wikirecent` and `models` to inspect
+the documentation of each.
 
 ### Resources:
 - Learn more about Materialize [in the docs](https://materialize.com/docs/)
-- Join Materialize's [chat](https://materializecommunity.slack.com/join/shared_invite/zt-jjwe1t45-klG9k7V7xibdtqA6bcFpyQ#/)
+- Join Materialize's [chat](https://materializecommunity.slack.com/join/shared_invite/zt-jjwe1t45-klG9k7V7xibdtqA6bcFpyQ#/) on Slack for live discussions and support
 - Learn more about dbt [in the docs](https://docs.getdbt.com/docs/introduction)
 - Join dbt's [chat](http://slack.getdbt.com/) on Slack for live discussions and support
