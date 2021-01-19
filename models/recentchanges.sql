@@ -1,4 +1,4 @@
-{{ config(materialized='table') }}
+{{ config(materialized='materializedview') }}
 
 SELECT
     val->>'$schema' AS r_schema,
