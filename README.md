@@ -6,9 +6,9 @@ into materialized views in [Materialize](https://materialize.com/product/) using
 *Note*: the [`dbt-materialize`](https://github.com/MaterializeInc/dbt-materialize) adapter used for this
 project is still a work in progress! If you hit a snag along the way, please open an issue or submit a PR.
 
-### Setup dbt + Materialize
 
 To get everything you need to run dbt with Materialize, do the following:
+
 1. Git clone this repo.
 
 1. Git clone the [`dbt-materialize` adapter repo](https://github.com/MaterializeInc/dbt-materialize).
@@ -24,7 +24,6 @@ To get everything you need to run dbt with Materialize, do the following:
     ```nofmt
     default:
       outputs:
-    
         dev:
           type: materialize
           threads: 1
