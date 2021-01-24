@@ -11,13 +11,17 @@ To get everything you need to run dbt with Materialize, do the following:
 
 1. Git clone this repo.
 
-1. Git clone the [`dbt-materialize` adapter repo](https://github.com/MaterializeInc/dbt-materialize).
+   ```
+   git clone https://github.com/MaterializeInc/dbt-materialize-wikirecent
+   ```
 
 1. Create a new Python virtual environment on your machine. Activate that environment,
    and install the following:
     ```nofmt
+    python3 -m venv dbt-venv
+    source dbt-venv/bin/activate
     pip install dbt
-    pip install [../relative/path/to/dbt-materialize]
+    pip install dbt-materialize
     ```
 
 1. Replace or add the following profile to your `~/.dbt/profiles.yml` file:
